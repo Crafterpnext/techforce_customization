@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include techforce_customization *.css
+recursive-include techforce_customization *.csv
+recursive-include techforce_customization *.html
+recursive-include techforce_customization *.ico
+recursive-include techforce_customization *.js
+recursive-include techforce_customization *.json
+recursive-include techforce_customization *.md
+recursive-include techforce_customization *.png
+recursive-include techforce_customization *.py
+recursive-include techforce_customization *.svg
+recursive-include techforce_customization *.txt
+recursive-exclude techforce_customization *.pyc

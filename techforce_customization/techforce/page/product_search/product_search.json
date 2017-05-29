@@ -1,0 +1,23 @@
+{
+ "content": null, 
+ "creation": "2017-05-26 23:29:21.720266", 
+ "docstatus": 0, 
+ "doctype": "Page", 
+ "idx": 0, 
+ "modified": "2017-05-26 23:29:51.053857", 
+ "modified_by": "Administrator", 
+ "module": "Techforce", 
+ "name": "product-search", 
+ "owner": "Administrator", 
+ "page_name": "Product Search", 
+ "roles": [
+  {
+   "role": "All"
+  }
+ ], 
+ "script": null, 
+ "standard": "Yes", 
+ "style": null, 
+ "system_page": 0, 
+ "title": "Product Search"
+}
