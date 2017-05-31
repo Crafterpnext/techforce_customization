@@ -6,9 +6,13 @@ frappe.ui.form.on('Serial No', {
 
 	},
 	after_save: function(frm) {
-		if (custom.serial_no.get_called_from != null) {
-			frappe.set_route(custom.serial_no.get_called_from);
-			custom.serial_no.set_called_from(null);
-		}
+                frappe.model.with_doc('Product Status', frm.doc.serial_no, function() {
+                        var status_doc = frappe.model.get_doc('Product Status', frm.doc.serial_no);
+			if (status_doc == null) {
+	  	                frappe.new_doc('Product Status',{'serial_no':frm.doc.serial_no});
+			} else {
+				frappe.set_route(status_doc);
+			}
+		});
 	}
 });

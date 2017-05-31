@@ -1,0 +1,27 @@
+{
+ "add_total_row": 0, 
+ "apply_user_permissions": 1, 
+ "creation": "2017-05-31 22:42:48.683168", 
+ "disabled": 0, 
+ "docstatus": 0, 
+ "doctype": "Report", 
+ "idx": 0, 
+ "is_standard": "Yes", 
+ "modified": "2017-05-31 23:46:37.166550", 
+ "modified_by": "Administrator", 
+ "module": "Techforce", 
+ "name": "Production Asking Rate", 
+ "owner": "Administrator", 
+ "query": "select *, cast((`Scheduled Delivery Qty`-`Dispatched`)/`Remaining Days` as Int) as `Asking Rate (Dispatch)`,\n   (cast((`Scheduled Delivery Qty`-`Dispatched`)/`Remaining Days` as Int)-`Painted`) as `Asking Rate (Painting)`,\n   (cast((`Scheduled Delivery Qty`-`Dispatched`)/`Remaining Days` as Int)-`Cut`) as `Asking Rate (Cutting)`,\n   (cast((`Scheduled Delivery Qty`-`Dispatched`)/`Remaining Days` as Int)-`Moulded`) as `Asking Rate (Moudling)`\n from (select p.part_code,p.part_name,\n   (select qty from `tabDelivery Schedule` where %(dt)s >= from_date and \n        %(dt)s <= to_date and product_code=p.part_code) as `Scheduled Delivery Qty`,\n   (select from_date from `tabDelivery Schedule` where %(dt)s >= from_date and \n        %(dt)s <= to_date and product_code=p.part_code) as `From Date`,\n   (select to_date from `tabDelivery Schedule` where %(dt)s >= from_date and \n        %(dt)s <= to_date and product_code=p.part_code) as `To Date`,\n   (select if(abs(datediff(%(dt)s,`To Date`))=0,1,abs(datediff(%(dt)s,`To Date`)))) as `Remaining Days`,\n   count(case when (cast(ps.moulding_completed_on as date) <= %(dt)s and \n          (ps.cutting_completed_on is null or cast(ps.cutting_completed_on as date) > %(dt)s)) \n        then 1 else null end) as `Moulded`,\n   count(case when (cast(ps.cutting_completed_on as date) <= %(dt)s and \n          (ps.painting_completed_on is null or cast(ps.painting_completed_on as date) > %(dt)s)) \n        then 1 else null end) as `Cut`,\n   count(case when (cast(ps.painting_completed_on as date) <= %(dt)s and \n          (ps.dispatched_on is null or cast(ps.dispatched_on as date) > %(dt)s)) \n        then 1 else null end) as `Painted`,\n   count(case when (cast(ps.dispatched_on as date) >= \n            (select from_date from `tabDelivery Schedule` where %(dt)s >= from_date and \n              %(dt)s <= to_date and product_code=p.part_code) \n          and\n           cast(ps.dispatched_on as date) <= \n            (select to_date from `tabDelivery Schedule` where %(dt)s >= from_date and \n              %(dt)s <= to_date and product_code=p.part_code)) then 1 else null end) as `Dispatched`\n     from `tabProduct Status` ps, `tabProduct` p, `tabSerial No` sn \n     where ps.serial_no=sn.serial_no and p.part_code=sn.product_code and p.part_code like %(pcode)s group by p.part_code) a", 
+ "ref_doctype": "Product Status", 
+ "report_name": "Production Asking Rate", 
+ "report_type": "Query Report", 
+ "roles": [
+  {
+   "role": "System Manager"
+  }, 
+  {
+   "role": "All"
+  }
+ ]
+}

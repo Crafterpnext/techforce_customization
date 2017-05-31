@@ -8,6 +8,12 @@ frappe.ui.form.on('Product Status', {
 	refresh: function(frm) {
 		//frm.events.hide_unhide_fields(frm);
 	},
+	after_save: function(frm) {
+		if (custom.serial_no.get_called_from() != null) {
+                        frappe.set_route(custom.serial_no.get_called_from());
+                        custom.serial_no.set_called_from(null);
+		}
+	},
 	hide_unhide_fields: function(frm) {
 		if (frm.doc.moulding_completed_by == null || frm.__islocal) {
 			frm.toggle_display("cutting", false);
