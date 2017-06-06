@@ -7,18 +7,30 @@
  "doctype": "Report", 
  "idx": 0, 
  "is_standard": "Yes", 
- "modified": "2017-05-31 23:46:37.166550", 
+ "modified": "2017-06-06 14:14:58.833505", 
  "modified_by": "Administrator", 
  "module": "Techforce", 
  "name": "Production Asking Rate", 
  "owner": "Administrator", 
- "query": "select *, cast((`Scheduled Delivery Qty`-`Dispatched`)/`Remaining Days` as Int) as `Asking Rate (Dispatch)`,\n   (cast((`Scheduled Delivery Qty`-`Dispatched`)/`Remaining Days` as Int)-`Painted`) as `Asking Rate (Painting)`,\n   (cast((`Scheduled Delivery Qty`-`Dispatched`)/`Remaining Days` as Int)-`Cut`) as `Asking Rate (Cutting)`,\n   (cast((`Scheduled Delivery Qty`-`Dispatched`)/`Remaining Days` as Int)-`Moulded`) as `Asking Rate (Moudling)`\n from (select p.part_code,p.part_name,\n   (select qty from `tabDelivery Schedule` where %(dt)s >= from_date and \n        %(dt)s <= to_date and product_code=p.part_code) as `Scheduled Delivery Qty`,\n   (select from_date from `tabDelivery Schedule` where %(dt)s >= from_date and \n        %(dt)s <= to_date and product_code=p.part_code) as `From Date`,\n   (select to_date from `tabDelivery Schedule` where %(dt)s >= from_date and \n        %(dt)s <= to_date and product_code=p.part_code) as `To Date`,\n   (select if(abs(datediff(%(dt)s,`To Date`))=0,1,abs(datediff(%(dt)s,`To Date`)))) as `Remaining Days`,\n   count(case when (cast(ps.moulding_completed_on as date) <= %(dt)s and \n          (ps.cutting_completed_on is null or cast(ps.cutting_completed_on as date) > %(dt)s)) \n        then 1 else null end) as `Moulded`,\n   count(case when (cast(ps.cutting_completed_on as date) <= %(dt)s and \n          (ps.painting_completed_on is null or cast(ps.painting_completed_on as date) > %(dt)s)) \n        then 1 else null end) as `Cut`,\n   count(case when (cast(ps.painting_completed_on as date) <= %(dt)s and \n          (ps.dispatched_on is null or cast(ps.dispatched_on as date) > %(dt)s)) \n        then 1 else null end) as `Painted`,\n   count(case when (cast(ps.dispatched_on as date) >= \n            (select from_date from `tabDelivery Schedule` where %(dt)s >= from_date and \n              %(dt)s <= to_date and product_code=p.part_code) \n          and\n           cast(ps.dispatched_on as date) <= \n            (select to_date from `tabDelivery Schedule` where %(dt)s >= from_date and \n              %(dt)s <= to_date and product_code=p.part_code)) then 1 else null end) as `Dispatched`\n     from `tabProduct Status` ps, `tabProduct` p, `tabSerial No` sn \n     where ps.serial_no=sn.serial_no and p.part_code=sn.product_code and p.part_code like %(pcode)s group by p.part_code) a", 
+ "query": "select *,\n  cast((`Base`.`Dispatch Asking Rate`-`Base`.`Net Painted Stock`) as Int) as `Painting Asking Rate`,\n  cast((\n    cast((`Base`.`Dispatch Asking Rate`-`Base`.`Net Painted Stock`) as Int)-`Base`.`Net Cut Stock`) as Int) as `Cutting Asking Rate`,\ncast((\n    cast((\n    cast((`Base`.`Dispatch Asking Rate`-`Base`.`Net Painted Stock`) as Int)-`Base`.`Net Cut Stock`) as Int)-`Base`.`Net Moulded Stock`) as Int) as `Moulding Asking Rate`  \n  from\n  (select *,\n    cast(((`Derived`.qty-`Derived`.`Dispatched Till Date`)/`Derived`.`Calculation Days`) as Int) as `Dispatch Asking Rate`,\n    cast((`Derived`.`Opening Painted Stock`+`Derived`.`Painted Till Date`-`Dispatched Till Date`) as Int) as `Net Painted Stock`,\n    cast((`Derived`.`Opening Cut Stock`+`Derived`.`Cut Till Date`-`Painted Till Date`) as Int) as `Net Cut Stock`,  \n    cast((`Derived`.`Opening Moulded Stock`+`Derived`.`Moulded Till Date`-`Cut Till Date`) as Int) as `Net Moulded Stock`  \n    from\n  (select from_date, to_date, p.part_code,qty,\n    abs(datediff(%(dt)s,to_date)) as `Remaining Days`,\n    abs(datediff(from_date,to_date)) as `Days in Range`,\n    cast(abs(datediff(%(dt)s,to_date))*.92 as Int) as `Calculation Days`,\n    ifnull((select count(*) from `tabProduct Status` ps where ps.product_code=p.part_code and cast(ps.moulding_completed_on as date) < `Date Range`.from_date and (ps.cutting_completed_on is null or cast(ps.cutting_completed_on as date) > `Date Range`.from_date)\n    ),0) as `Opening Moulded Stock`,\n    ifnull((select count(*) from `tabProduct Status` ps where ps.product_code=p.part_code and cast(ps.cutting_completed_on as date) < `Date Range`.from_date and (ps.painting_completed_on is null or cast(ps.painting_completed_on as date) > `Date Range`.from_date)\n    ),0) as `Opening Cut Stock`,\n    ifnull((select count(*) from `tabProduct Status` ps where ps.product_code=p.part_code and cast(ps.painting_completed_on as date) < `Date Range`.from_date and (ps.dispatched_on is null or cast(ps.dispatched_on as date) > `Date Range`.from_date)\n    ),0) as `Opening Painted Stock`,\n    ifnull((select count(*) from `tabProduct Status` ps where ps.product_code=p.part_code and (cast(ps.moulding_completed_on as date) >= `Date Range`.from_date and cast(ps.moulding_completed_on as date) <= `Date Range`.today)\n    ),0) as `Moulded Till Date`,\n    ifnull((select count(*) from `tabProduct Status` ps where ps.product_code=p.part_code and (cast(ps.cutting_completed_on as date) >= `Date Range`.from_date and cast(ps.cutting_completed_on as date) <= `Date Range`.today)\n    ),0) as `Cut Till Date`,\n    ifnull((select count(*) from `tabProduct Status` ps where ps.product_code=p.part_code and (cast(ps.painting_completed_on as date) >= `Date Range`.from_date and cast(ps.painting_completed_on as date) <= `Date Range`.today)\n    ),0) as `Painted Till Date`,\n    ifnull((select count(*) from `tabProduct Status` ps where ps.product_code=p.part_code and (cast(ps.dispatched_on as date) >= `Date Range`.from_date and cast(ps.dispatched_on as date) <= `Date Range`.today)\n    ),0) as `Dispatched Till Date`\n\n    from \n  (select from_date, to_date, product_code, qty,%(dt)s as today from `tabDelivery Schedule` where %(dt)s >= from_date and \n        %(dt)s <= to_date) as `Date Range`, `tabProduct` as p where p.part_code=`Date Range`.product_code and p.part_code like %(pcode)s group by p.part_code) as `Derived`) as `Base`", 
  "ref_doctype": "Product Status", 
  "report_name": "Production Asking Rate", 
  "report_type": "Query Report", 
  "roles": [
   {
    "role": "System Manager"
+  }, 
+  {
+   "role": "System Manager"
+  }, 
+  {
+   "role": "System Manager"
+  }, 
+  {
+   "role": "All"
+  }, 
+  {
+   "role": "All"
   }, 
   {
    "role": "All"

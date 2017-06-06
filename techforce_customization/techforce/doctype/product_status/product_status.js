@@ -27,3 +27,7 @@ frappe.ui.form.on('Product Status', {
 		} 
 	}
 });
+
+frappe.ui.form.on('Product Status', 'serial_no', function(frm) {
+	frm.add_fetch("serial_no", "product_code", "product_code");
+});
